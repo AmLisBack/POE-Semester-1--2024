@@ -1,14 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class EnemyFinite : MonoBehaviour
 {
     public Transform player;
-    public Transform redFlagWaypoint;//Flag position based on the Gameobjects transform - For Navmesh agent AI
-    public Transform blueFlagWaypoint;
+    public Transform redFlag;//Flag position based on the Gameobjects transform - For Navmesh agent AI
+    public Transform blueFlag;
     public Transform secureRedFlag;
     //These are used to spawn the flag back once captured or resecured
     public Transform blueFlagSpawn;
@@ -28,6 +29,8 @@ public class EnemyFinite : MonoBehaviour
     public bool enemyHasFlag;//if the enemy/agent is carrying a flag
 
     private States currentState;
+
+    
     private enum States
     {
         Take, Recapture, Chase, Avoid, Secure
@@ -46,8 +49,8 @@ public class EnemyFinite : MonoBehaviour
     void Update()
     {
         distanceToPlayer = Vector3.Distance(transform.position,player.position); //Gets the distance between agent and player
-        distanceToRedFlag = Vector3.Distance(transform.position,redFlagWaypoint.position);//to make decision based on offensive or attack
-        distanceToBlueFlag = Vector3.Distance(transform.position,blueFlagWaypoint.position);//distance to objective
+        distanceToRedFlag = Vector3.Distance(transform.position,redFlag.position);//to make decision based on offensive or attack
+        distanceToBlueFlag = Vector3.Distance(transform.position,blueFlag.position);//distance to objective
 
         switch(currentState)
         {
@@ -87,11 +90,11 @@ public class EnemyFinite : MonoBehaviour
 
     private void Take()
     {
-        enemy.destination = blueFlagWaypoint.position;
+        enemy.destination = blueFlag.position;
     }
     private void Recapture()
     {
-        enemy.destination = redFlagWaypoint.position;
+        enemy.destination = redFlag.position;
     }
     private void Chase()
     {
@@ -108,21 +111,31 @@ public class EnemyFinite : MonoBehaviour
     private void Secure()
     {
         enemy.destination = secureRedFlag.position;
+        StartCoroutine(flagFollow());
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)//Possible issue if too many triggers being activated therefor tags not working// Possible solution have a deactivated flag on the enemy and player and activate them once they are 'carrying' the flag
     {
         if(other.CompareTag("BlueFlag"))
         {
             enemyHasFlag = true;
-            blueFlagWaypoint.SetParent(enemy.transform);
         }
-        if(other.CompareTag("SecureRed"))
+        else if(other.CompareTag("SecureRed"))
         {
-            Debug.Log("True");
-            blueFlagWaypoint.SetParent(null);
-            blueFlagWaypoint.position = blueFlagSpawn.position;
+            Debug.Log("entered Red secure trigger");
+            blueFlag.position = blueFlagSpawn.position;
             enemyHasFlag = false;
+            StopCoroutine(flagFollow());
         }
+        else if(other.CompareTag("SecureBlue"))
+        {
+            Debug.Log("Entered blue secure");
+        }
+        
+    }
+    IEnumerator flagFollow()
+    {
+        blueFlag.position = Vector3.MoveTowards(blueFlag.position, enemy.transform.position, 1f);
+        yield return null;
     }
 }
