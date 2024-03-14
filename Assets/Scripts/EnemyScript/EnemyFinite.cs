@@ -62,7 +62,7 @@ public class EnemyFinite : MonoBehaviour
                 }
                 if(enemyHasFlag)
                 {
-                    Secure();
+                    currentState = States.Secure;
                 }
                 break;
             case States.Chase:
@@ -80,6 +80,10 @@ public class EnemyFinite : MonoBehaviour
                 break;
             case States.Secure:
                 Secure();
+                if(!enemyHasFlag)
+                {
+                    currentState = States.Take;
+                }
                 if(distanceToPlayer <= keepDistance)
                 {
                     currentState = States.Avoid;
@@ -111,7 +115,12 @@ public class EnemyFinite : MonoBehaviour
     private void Secure()
     {
         enemy.destination = secureRedFlag.position;
-        StartCoroutine(flagFollow());
+        blueFlag.position = Vector3.MoveTowards(blueFlag.position, enemy.transform.position, 1f);
+        if(enemy.transform.position.x == enemy.destination.x)
+        {
+            blueFlag.position = blueFlagSpawn.position;
+            enemyHasFlag = false;
+        }
     }
 
     private void OnTriggerEnter(Collider other)//Possible issue if too many triggers being activated therefor tags not working// Possible solution have a deactivated flag on the enemy and player and activate them once they are 'carrying' the flag
@@ -125,7 +134,7 @@ public class EnemyFinite : MonoBehaviour
             Debug.Log("entered Red secure trigger");
             blueFlag.position = blueFlagSpawn.position;
             enemyHasFlag = false;
-            StopCoroutine(flagFollow());
+           
         }
         else if(other.CompareTag("SecureBlue"))
         {
@@ -133,9 +142,5 @@ public class EnemyFinite : MonoBehaviour
         }
         
     }
-    IEnumerator flagFollow()
-    {
-        blueFlag.position = Vector3.MoveTowards(blueFlag.position, enemy.transform.position, 1f);
-        yield return null;
-    }
+   
 }
