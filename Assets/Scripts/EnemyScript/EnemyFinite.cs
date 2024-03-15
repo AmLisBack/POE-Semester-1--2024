@@ -123,8 +123,9 @@ public class EnemyFinite : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)//Possible issue if too many triggers being activated therefor tags not working// Possible solution have a deactivated flag on the enemy and player and activate them once they are 'carrying' the flag
+    private void OnTriggerEnter(Collider other)// Add a rb to all waypoints and freeze positions
     {
+        Debug.Log(other.tag);
         if(other.CompareTag("BlueFlag"))
         {
             enemyHasFlag = true;
