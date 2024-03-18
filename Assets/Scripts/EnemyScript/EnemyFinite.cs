@@ -22,11 +22,17 @@ public class EnemyFinite : MonoBehaviour
     private float distanceToBlueFlag;
     private float distanceToRedFlag;
     private float keepDistance = 3f;
+    public static float roundNumber = 1;
+    private float playerScore = 0;
+    private float enemyScore = 0;
 
     public bool playerHasFlag;//true if the player is carrying the Red flag
     public bool returnRedFlag;
     public bool chasePlayer;//used to decide whether to chase the player
     public bool enemyHasFlag;//if the enemy/agent is carrying a flag
+    public bool playerScored;
+    public bool enemyScored;
+    private bool roundEnded;
 
     private States currentState;
 
@@ -43,15 +49,32 @@ public class EnemyFinite : MonoBehaviour
         enemyHasFlag = false;
         chasePlayer = false;
         returnRedFlag = false;
+        playerScored = false;
+        enemyScored = false;
+        roundEnded = false;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if(roundEnded)
+        {
+            roundNumber += 1;
+            enemy.transform.position = blueFlagSpawn.position + new Vector3(0f,2f,0f);
+            if(enemyScored)
+            {
+                enemyScore += 1;
+            }
+            if(playerScored)
+            {
+                playerScore += 1;
+            }
+            roundEnded = false ;
+        }
         distanceToPlayer = Vector3.Distance(transform.position,player.position); //Gets the distance between agent and player
         distanceToRedFlag = Vector3.Distance(transform.position,redFlag.position);//to make decision based on offensive or attack
         distanceToBlueFlag = Vector3.Distance(transform.position,blueFlag.position);//distance to objective
-
+        
         switch(currentState)
         {
             case States.Take:
@@ -71,12 +94,20 @@ public class EnemyFinite : MonoBehaviour
                 {
                     currentState = States.Secure;
                 }
+                if (distanceToPlayer > 8f)
+                {
+                    currentState = States.Take;
+                }
                 break;
             case States.Recapture:
                 Recapture();
                 break;
             case States.Avoid:
                 Avoid();
+                if(distanceToPlayer > 8f)
+                {
+                    currentState = States.Secure;
+                }
                 break;
             case States.Secure:
                 Secure();
@@ -94,11 +125,11 @@ public class EnemyFinite : MonoBehaviour
 
     private void Take()
     {
-        enemy.destination = blueFlag.position;
+        enemy.destination = redFlag.position;
     }
     private void Recapture()
     {
-        enemy.destination = redFlag.position;
+        enemy.destination = blueFlag.position;
     }
     private void Chase()
     {
@@ -115,29 +146,27 @@ public class EnemyFinite : MonoBehaviour
     private void Secure()
     {
         enemy.destination = secureRedFlag.position;
-        blueFlag.position = Vector3.MoveTowards(blueFlag.position, enemy.transform.position, 1f);
-        if(enemy.transform.position.x == enemy.destination.x)
-        {
-            blueFlag.position = blueFlagSpawn.position;
-            enemyHasFlag = false;
-        }
-    }
+        redFlag.position = Vector3.MoveTowards(redFlag.position, enemy.transform.position, 1f);
+       
+    }   
 
     private void OnTriggerEnter(Collider other)// Add a rb to all waypoints and freeze positions
     {
         Debug.Log(other.tag);
-        if(other.CompareTag("BlueFlag"))
+        if(other.CompareTag("RedFlag"))
         {
             enemyHasFlag = true;
         }
         else if(other.CompareTag("SecureRed"))
         {
-            Debug.Log("entered Red secure trigger");
-            blueFlag.position = blueFlagSpawn.position;
+            
+            redFlag.position = redFlagSpawn.position;
+            enemyScored = true;
+            roundEnded = true;
             enemyHasFlag = false;
            
         }
-        else if(other.CompareTag("SecureBlue"))
+        else if(other.CompareTag("SecureRed"))
         {
             Debug.Log("Entered blue secure");
         }
