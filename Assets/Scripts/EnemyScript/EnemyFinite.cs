@@ -23,16 +23,19 @@ public class EnemyFinite : MonoBehaviour
     private float distanceToRedFlag;
     private float keepDistance = 3f;
     public static float roundNumber = 1;
-    private float playerScore = 0;
-    private float enemyScore = 0;
+    public static float playerScore = 0;
+    public static float enemyScore = 0;
 
-    public bool playerHasFlag;//true if the player is carrying the Red flag
+    
     public bool returnRedFlag;
     public bool chasePlayer;//used to decide whether to chase the player
     public bool enemyHasFlag;//if the enemy/agent is carrying a flag
-    public bool playerScored;
     public bool enemyScored;
-    private bool roundEnded;
+    public static bool roundEnded;
+    public static bool playerScored;
+    public static bool playerHasFlag;//true if the player is carrying the Red flag
+    public static bool flagDropped;
+    public static bool playerDroppedFlag;
 
     private States currentState;
 
@@ -57,19 +60,31 @@ public class EnemyFinite : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Debug.Log($"playerScored {playerScored} |||||| EnemyScored {enemyScored}");
         if(roundEnded)
         {
+            flagReset();
+            playerHasFlag = false;
+            enemyHasFlag = false;
             roundNumber += 1;
             enemy.transform.position = blueFlagSpawn.position + new Vector3(0f,2f,0f);
             if(enemyScored)
             {
                 enemyScore += 1;
+                enemyScored = false;
+                
             }
             if(playerScored)
             {
                 playerScore += 1;
+                playerScored = false;
+                
             }
             roundEnded = false ;
+        }
+        if(flagDropped)
+        {
+            gameObject.transform.position = blueFlagSpawn.position;
         }
         distanceToPlayer = Vector3.Distance(transform.position,player.position); //Gets the distance between agent and player
         distanceToRedFlag = Vector3.Distance(transform.position,redFlag.position);//to make decision based on offensive or attack
@@ -79,7 +94,7 @@ public class EnemyFinite : MonoBehaviour
         {
             case States.Take:
                 Take();
-                if(distanceToPlayer <= 5f  && !enemyHasFlag && distanceToPlayer < distanceToBlueFlag)
+                if (distanceToPlayer <= 5f && !enemyHasFlag && distanceToPlayer < distanceToBlueFlag && playerHasFlag)
                 {
                     currentState = States.Chase;
                 }
@@ -149,6 +164,15 @@ public class EnemyFinite : MonoBehaviour
         redFlag.position = Vector3.MoveTowards(redFlag.position, enemy.transform.position, 1f);
        
     }   
+    private void flagReset()
+    {
+        redFlag.position = redFlagSpawn.position;
+        blueFlag.position = blueFlagSpawn.position; 
+    }
+    private void enemyAttack()
+    {
+        playerDroppedFlag = true;
+    }
 
     private void OnTriggerEnter(Collider other)// Add a rb to all waypoints and freeze positions
     {
@@ -156,8 +180,9 @@ public class EnemyFinite : MonoBehaviour
         if(other.CompareTag("RedFlag"))
         {
             enemyHasFlag = true;
+            
         }
-        else if(other.CompareTag("SecureRed"))
+        else if(other.CompareTag("SecureRed") && enemyHasFlag)
         {
             
             redFlag.position = redFlagSpawn.position;
@@ -166,10 +191,16 @@ public class EnemyFinite : MonoBehaviour
             enemyHasFlag = false;
            
         }
-        else if(other.CompareTag("SecureRed"))
+        if(other.CompareTag("Player") && !enemyHasFlag)
         {
-            Debug.Log("Entered blue secure");
+            enemyAttack();
         }
+        if(other.CompareTag("BlueFlag") && currentState == States.Recapture)
+        {
+            
+        }
+        
+       
         
     }
    
