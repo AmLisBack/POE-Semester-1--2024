@@ -29,8 +29,8 @@ public class EnemyFinite : MonoBehaviour
     
     public bool returnRedFlag;
     public bool chasePlayer;//used to decide whether to chase the player
-    public bool enemyHasFlag;//if the enemy/agent is carrying a flag
-    public bool enemyScored;
+    public static bool enemyHasFlag;//if the enemy/agent is carrying a flag
+    public static bool enemyScored;
     public static bool roundEnded;
     public static bool playerScored;
     public static bool playerHasFlag;//true if the player is carrying the Red flag
@@ -55,6 +55,7 @@ public class EnemyFinite : MonoBehaviour
         playerScored = false;
         enemyScored = false;
         roundEnded = false;
+        flagDropped = false;
     }
 
     // Update is called once per frame
@@ -67,6 +68,7 @@ public class EnemyFinite : MonoBehaviour
             playerHasFlag = false;
             enemyHasFlag = false;
             roundNumber += 1;
+            flagDropped = false;
             enemy.transform.position = blueFlagSpawn.position + new Vector3(0f,2f,0f);
             if(enemyScored)
             {
@@ -82,9 +84,15 @@ public class EnemyFinite : MonoBehaviour
             }
             roundEnded = false ;
         }
-        if(flagDropped)
+        if(flagDropped) //Constantly running causing the AI to freeze in the air
         {
-            gameObject.transform.position = blueFlagSpawn.position;
+            currentState = States.Take;
+            enemy.transform.position = blueFlagSpawn.position + new Vector3(0f, 2f, 0f);
+        }
+         
+        if(enemyHasFlag && !flagDropped)
+        {
+            redFlag.position = Vector3.MoveTowards(redFlag.position, enemy.transform.position, 1f);
         }
         distanceToPlayer = Vector3.Distance(transform.position,player.position); //Gets the distance between agent and player
         distanceToRedFlag = Vector3.Distance(transform.position,redFlag.position);//to make decision based on offensive or attack
@@ -161,7 +169,7 @@ public class EnemyFinite : MonoBehaviour
     private void Secure()
     {
         enemy.destination = secureRedFlag.position;
-        redFlag.position = Vector3.MoveTowards(redFlag.position, enemy.transform.position, 1f);
+        
        
     }   
     private void flagReset()
@@ -177,11 +185,8 @@ public class EnemyFinite : MonoBehaviour
     private void OnTriggerEnter(Collider other)// Add a rb to all waypoints and freeze positions
     {
         Debug.Log(other.tag);
-        if(other.CompareTag("RedFlag"))
-        {
-            enemyHasFlag = true;
-            
-        }
+        
+        /*
         else if(other.CompareTag("SecureRed") && enemyHasFlag)
         {
             
@@ -191,13 +196,15 @@ public class EnemyFinite : MonoBehaviour
             enemyHasFlag = false;
            
         }
+        */
         if(other.CompareTag("Player") && !enemyHasFlag)
         {
             enemyAttack();
         }
         if(other.CompareTag("BlueFlag") && currentState == States.Recapture)
         {
-            
+            blueFlag.position = blueFlagSpawn.position;
+            flagDropped = false;
         }
         
        

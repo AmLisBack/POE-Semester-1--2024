@@ -47,7 +47,7 @@ public class Movement : MonoBehaviour
     }
     private void Recapture()
     {
-        blueFlag.position = blueFlagSpawn.position;
+        redFlag.position = redFlagSpawn.position;
     }
     private void OnTriggerEnter(Collider other)
     {
@@ -62,9 +62,14 @@ public class Movement : MonoBehaviour
             EnemyFinite.playerScored = true;
             EnemyFinite.roundEnded = true;
         } 
-        if(other.CompareTag("Enemy"))
+        if(other.CompareTag("Enemy") && !EnemyFinite.playerHasFlag)
         {
             Attack();
+        }
+        if(other.CompareTag("RedFlag") && EnemyFinite.flagDropped)
+        {
+            Recapture();
+            EnemyFinite.flagDropped = false;
         }
     }
 }
