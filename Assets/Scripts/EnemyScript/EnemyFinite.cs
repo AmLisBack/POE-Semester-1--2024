@@ -22,20 +22,24 @@ public class EnemyFinite : MonoBehaviour
     private float distanceToBlueFlag;
     private float distanceToRedFlag;
     private float keepDistance = 3f;
-    public static float roundNumber = 1;
+    public static float roundNumber = 1;// Set to 1 because game starts on Round 1
     public static float playerScore = 0;
     public static float enemyScore = 0;
 
     
     public bool returnRedFlag;
     public bool chasePlayer;//used to decide whether to chase the player
-    public static bool enemyHasFlag;//if the enemy/agent is carrying a flag
+    public bool returnBlueFlag;//Used to start returning the flag
+    public bool recaptureFlag;//Used to set the state to go fetch the enemies dropped flag
+
+    public static bool enemyHasFlag;//if the enemy has the players flag
     public static bool enemyScored;
     public static bool roundEnded;
     public static bool playerScored;
     public static bool playerHasFlag;//true if the player is carrying the Red flag
-    public static bool flagDropped;
-    public static bool playerDroppedFlag;
+    public static bool flagDropped;//If the enemy drops the flag this is true
+    public static bool playerDroppedFlag;//Set in the Movement script, for when the player drops their flag
+
 
     private States currentState;
 
@@ -87,12 +91,17 @@ public class EnemyFinite : MonoBehaviour
         if(flagDropped) //Constantly running causing the AI to freeze in the air
         {
             currentState = States.Take;
-            enemy.transform.position = blueFlagSpawn.position + new Vector3(0f, 2f, 0f);
+            flagDropped = false;
         }
          
         if(enemyHasFlag && !flagDropped)
         {
             redFlag.position = Vector3.MoveTowards(redFlag.position, enemy.transform.position, 1f);
+        }
+        if(playerDroppedFlag && recaptureFlag && !enemyHasFlag)
+        {
+            blueFlag.position = Vector3.MoveTowards(blueFlag.position, enemy.transform.position, 1f);
+            returnBlueFlag = true;
         }
         distanceToPlayer = Vector3.Distance(transform.position,player.position); //Gets the distance between agent and player
         distanceToRedFlag = Vector3.Distance(transform.position,redFlag.position);//to make decision based on offensive or attack
@@ -110,6 +119,10 @@ public class EnemyFinite : MonoBehaviour
                 {
                     currentState = States.Secure;
                 }
+                if(recaptureFlag && playerDroppedFlag)
+                {
+                    currentState = States.Recapture;
+                }
                 break;
             case States.Chase:
                 Chase();
@@ -121,6 +134,14 @@ public class EnemyFinite : MonoBehaviour
                 {
                     currentState = States.Take;
                 }
+                if(flagDropped)
+                {
+                    currentState = States.Take;
+                }
+                if(playerDroppedFlag && recaptureFlag)
+                {
+                    currentState = States.Recapture;
+                }
                 break;
             case States.Recapture:
                 Recapture();
@@ -130,6 +151,10 @@ public class EnemyFinite : MonoBehaviour
                 if(distanceToPlayer > 8f)
                 {
                     currentState = States.Secure;
+                }
+                if(distanceToPlayer >8f && playerDroppedFlag)
+                {
+                    currentState = States.Recapture;
                 }
                 break;
             case States.Secure:
@@ -200,11 +225,26 @@ public class EnemyFinite : MonoBehaviour
         if(other.CompareTag("Player") && !enemyHasFlag)
         {
             enemyAttack();
+            
+        }
+        if(other.CompareTag("Player") && enemyHasFlag)
+        {
+            enemy.transform.position = blueFlagSpawn.position + new Vector3(0f, 2f, 0f);
         }
         if(other.CompareTag("BlueFlag") && currentState == States.Recapture)
         {
             blueFlag.position = blueFlagSpawn.position;
-            flagDropped = false;
+            returnBlueFlag = true;//Players flag is no longer dropped
+            
+        }
+        if(other.CompareTag("SecureBlue") && returnBlueFlag && currentState == States.Recapture)
+        {
+            blueFlag.position = blueFlagSpawn.position;
+            returnBlueFlag = false;
+            currentState = States.Take;//Resets to starting state to make decisions based on other params in switch case
+            playerDroppedFlag = false;
+            recaptureFlag = false;
+            
         }
         
        
