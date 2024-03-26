@@ -9,6 +9,10 @@ TagManager:
   - RedFlag
   - SecureRed
   - SecureBlue
+  - test
+  - Enemy
+  - RedBase
+  - BlueBase
   layers:
   - Default
   - TransparentFX
