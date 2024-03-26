@@ -12,8 +12,8 @@ public class EnemyFinite : MonoBehaviour
     public Transform blueFlag;
     public Transform secureRedFlag;
     //These are used to spawn the flag back once captured or resecured
-    public Transform blueFlagSpawn;
-    public Transform redFlagSpawn;
+    public Transform blueBase;
+    public Transform redBase;
     
 
     public NavMeshAgent enemy;
@@ -32,101 +32,97 @@ public class EnemyFinite : MonoBehaviour
     public bool returnBlueFlag;//Used to start returning the flag
     public bool recaptureFlag;//Used to set the state to go fetch the enemies dropped flag
 
-    public static bool enemyHasFlag;//if the enemy has the players flag
-    public static bool enemyScored;
+    //RED FLAG TO TAKE, BLUE FLAG TO PROTECT
+    //BLUE SECURE IS ON PLAYERS SIDE, RED SECURE IS ON ENEMIES SIDE
+
+
+    
+    public static bool enemyWon;
     public static bool roundEnded;
-    public static bool playerScored;
+    public static bool playerWon;
     public static bool playerHasFlag;//true if the player is carrying the Red flag
-    public static bool flagDropped;//If the enemy drops the flag this is true
+    public static bool flagDrop;//If the enemy drops the flag this is true
     public static bool playerDroppedFlag;//Set in the Movement script, for when the player drops their flag
 
+    public bool enemyHasOwnFlag;// if the enemy has its own flag (Blue)
+    public bool enemyHasPlayersFlag;//if the enemy has the players flag (Red)
+
+    public static bool enemyCarryingFlag;//This is for the redFlag script to check if its been secured
+    public  bool redFollow;
+    public bool blueFollow;
 
     private States currentState;
 
     
     private enum States
     {
-        Take, Recapture, Chase, Avoid, Secure
+        Take, Chase, Avoid, Secure
     }
     // Start is called before the first frame update
     void Start()
     {
         currentState = States.Take; //Enemy goes for players flag from the start
         playerHasFlag = false;
-        enemyHasFlag = false;
+        enemyHasPlayersFlag = false;
         chasePlayer = false;
         returnRedFlag = false;
-        playerScored = false;
-        enemyScored = false;
+        playerWon = false;
+        enemyWon = false;
         roundEnded = false;
-        flagDropped = false;
+        flagDrop = false;
     }
 
     // Update is called once per frame
     void Update()
     {
-        Debug.Log($"playerScored {playerScored} |||||| EnemyScored {enemyScored}");
-        if(roundEnded)
+        #region Round Ended
+        Debug.Log($"playerScored {playerWon} |||||| EnemyScored {enemyWon} [Current State]: {currentState}");
+        if (roundEnded)
         {
             flagReset();
             playerHasFlag = false;
-            enemyHasFlag = false;
+            enemyHasPlayersFlag = false;
+            enemyHasOwnFlag = false;
             roundNumber += 1;
-            flagDropped = false;
-            enemy.transform.position = blueFlagSpawn.position + new Vector3(0f,2f,0f);
-            if(enemyScored)
+            flagDrop = false;
+            if (enemyWon)
             {
                 enemyScore += 1;
-                enemyScored = false;
-                
+                enemyWon = false;
+
             }
-            if(playerScored)
+            if (playerWon)
             {
                 playerScore += 1;
-                playerScored = false;
-                
+                playerWon = false;
+
             }
-            roundEnded = false ;
+            roundEnded = false;
         }
-        if(flagDropped) //Constantly running causing the AI to freeze in the air
-        {
-            currentState = States.Take;
-            flagDropped = false;
-        }
-         
-        if(enemyHasFlag && !flagDropped)
-        {
-            redFlag.position = Vector3.MoveTowards(redFlag.position, enemy.transform.position, 1f);
-        }
-        if(playerDroppedFlag && recaptureFlag && !enemyHasFlag)
-        {
-            blueFlag.position = Vector3.MoveTowards(blueFlag.position, enemy.transform.position, 1f);
-            returnBlueFlag = true;
-        }
-        distanceToPlayer = Vector3.Distance(transform.position,player.position); //Gets the distance between agent and player
-        distanceToRedFlag = Vector3.Distance(transform.position,redFlag.position);//to make decision based on offensive or attack
-        distanceToBlueFlag = Vector3.Distance(transform.position,blueFlag.position);//distance to objective
-        
-        switch(currentState)
+        #endregion
+
+
+        distanceToPlayer = Vector3.Distance(transform.position, player.position); //Gets the distance between agent and player
+        distanceToRedFlag = Vector3.Distance(transform.position, redFlag.position);//to make decision based on offensive or attack
+        distanceToBlueFlag = Vector3.Distance(transform.position, blueFlag.position);//distance to objective
+
+        switch (currentState)
         {
             case States.Take:
                 Take();
-                if (distanceToPlayer <= 5f && !enemyHasFlag && distanceToPlayer < distanceToBlueFlag && playerHasFlag)
+                if (distanceToPlayer <= 5f && !enemyHasPlayersFlag && distanceToPlayer < distanceToBlueFlag && playerHasFlag)
                 {
                     currentState = States.Chase;
                 }
-                if(enemyHasFlag)
+                if (enemyHasPlayersFlag)
                 {
                     currentState = States.Secure;
                 }
-                if(recaptureFlag && playerDroppedFlag)
-                {
-                    currentState = States.Recapture;
-                }
+                
                 break;
             case States.Chase:
                 Chase();
-                if(enemyHasFlag)
+                if (enemyHasPlayersFlag)
                 {
                     currentState = States.Secure;
                 }
@@ -134,52 +130,88 @@ public class EnemyFinite : MonoBehaviour
                 {
                     currentState = States.Take;
                 }
-                if(flagDropped)
+                if (flagDrop)
                 {
                     currentState = States.Take;
                 }
-                if(playerDroppedFlag && recaptureFlag)
-                {
-                    currentState = States.Recapture;
-                }
-                break;
-            case States.Recapture:
-                Recapture();
-                break;
-            case States.Avoid:
-                Avoid();
-                if(distanceToPlayer > 8f)
+                if(redFollow || blueFollow)
                 {
                     currentState = States.Secure;
                 }
-                if(distanceToPlayer >8f && playerDroppedFlag)
+                
+                break;
+            case States.Avoid:
+                Avoid();
+                if(distanceToPlayer > 8f && flagDrop)
                 {
-                    currentState = States.Recapture;
+                    currentState = States.Take;
+                    flagDrop = false;
+                }
+                if (distanceToPlayer > 8f)
+                {
+                    currentState = States.Secure;
                 }
                 break;
             case States.Secure:
-                Secure();
-                if(!enemyHasFlag)
+                if (blueFollow)
+                {
+                    Secure(redBase);
+                }
+                if (redFollow)
+                {
+                    Secure(redBase);
+                }
+                if (!enemyHasPlayersFlag)
                 {
                     currentState = States.Take;
                 }
-                if(distanceToPlayer <= keepDistance)
+                if (distanceToPlayer <= keepDistance)
                 {
                     currentState = States.Avoid;
                 }
                 break;
+        }if(flagDrop)
+        {
+            if(redFollow)
+            {
+                FlagDrop(redFlag);
+            }
+            if(blueFollow)
+            {
+                FlagDrop(blueFlag);
+            }
+            redFollow = false;
+            blueFollow = false;
+            enemyHasOwnFlag = false;
+            enemyHasPlayersFlag = false;
+            
+            currentState = States.Avoid;
+            
         }
+        if (!flagDrop)
+        {
+            if (redFollow)
+            {
+                FlagFollow(redFlag);
+            }
+            if (blueFollow)
+            {
+                FlagFollow(blueFlag);
+            }
+        }
+        
     }
 
-    private void Take()
+    private void Take()//Go get the enemies flag(Red)
     {
         enemy.destination = redFlag.position;
     }
-    private void Recapture()
+    private void Recapture()//Pick up and defend own flag(Blue)
     {
-        enemy.destination = blueFlag.position;
+        
+        enemy.destination = redBase.position;
     }
-    private void Chase()
+    private void Chase()// Try and get to the player to Attack
     {
         enemy.destination = player.position;
     }
@@ -191,61 +223,70 @@ public class EnemyFinite : MonoBehaviour
         enemy.destination = avoidDirectionPoint;
         
     }
-    private void Secure()
+    private void Secure(Transform baseToSecureAt)
     {
-        enemy.destination = secureRedFlag.position;
+        enemy.destination = baseToSecureAt.position;
         
-       
     }   
     private void flagReset()
     {
-        redFlag.position = redFlagSpawn.position;
-        blueFlag.position = blueFlagSpawn.position; 
+        redFollow = false;
+        blueFollow = false; 
+        redFlag.position = blueBase.position;
+        blueFlag.position = redBase.position; 
     }
     private void enemyAttack()
     {
         playerDroppedFlag = true;
     }
 
+    private void FlagFollow(Transform flag)
+    {
+        flag.transform.position = Vector3.MoveTowards(flag.position, gameObject.transform.position, 1f) + new Vector3(0, 1f, 0);
+    }
+    private void FlagDrop(Transform flag)
+    {
+        flag.position = gameObject.transform.position + new Vector3(0, 1.5f, 0);
+    }
+
     private void OnTriggerEnter(Collider other)// Add a rb to all waypoints and freeze positions
     {
-        Debug.Log(other.tag);
+        //Debug.Log(other.tag);
+        if(other.CompareTag("Player"))
+        {
+            if(!enemyHasPlayersFlag || !enemyHasOwnFlag)
+            {
+                enemyAttack();
+            }
+            if(enemyHasPlayersFlag|| enemyHasOwnFlag)
+            {
+                flagDrop = true;
+                if(blueFollow)
+                {
+                    blueFlag.position += new Vector3(0, 1f, 0f);
+                }
+                if(redFollow)
+                {
+                    redFlag.position += new Vector3(0, 1f, 0f);
+                }
+            }
+        }
+        if(other.CompareTag("BlueFlag"))
+        {
+            if(flagDrop)
+            {
+                enemyHasOwnFlag = true;
+                blueFollow = true;
+            }
+        }
+        if(other.CompareTag("RedFlag"))
+        {
+            redFollow = true;
+            enemyHasPlayersFlag = true;
+        }
         
-        /*
-        else if(other.CompareTag("SecureRed") && enemyHasFlag)
-        {
-            
-            redFlag.position = redFlagSpawn.position;
-            enemyScored = true;
-            roundEnded = true;
-            enemyHasFlag = false;
-           
-        }
-        */
-        if(other.CompareTag("Player") && !enemyHasFlag)
-        {
-            enemyAttack();
-            
-        }
-        if(other.CompareTag("Player") && enemyHasFlag)
-        {
-            enemy.transform.position = blueFlagSpawn.position + new Vector3(0f, 2f, 0f);
-        }
-        if(other.CompareTag("BlueFlag") && currentState == States.Recapture)
-        {
-            blueFlag.position = blueFlagSpawn.position;
-            returnBlueFlag = true;//Players flag is no longer dropped
-            
-        }
-        if(other.CompareTag("SecureBlue") && returnBlueFlag && currentState == States.Recapture)
-        {
-            blueFlag.position = blueFlagSpawn.position;
-            returnBlueFlag = false;
-            currentState = States.Take;//Resets to starting state to make decisions based on other params in switch case
-            playerDroppedFlag = false;
-            recaptureFlag = false;
-            
-        }
+        
+        
         
        
         

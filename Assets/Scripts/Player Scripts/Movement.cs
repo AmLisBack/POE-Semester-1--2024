@@ -13,6 +13,15 @@ public class Movement : MonoBehaviour
     public Transform blueFlagSpawn;
     public Transform redFlagSpawn;
 
+    public bool playerHasEnemyFlag;
+    public bool playerHasTheirFlag;
+
+    public bool playerFlagDrop;
+
+    public void Start()
+    {
+        playerFlagDrop = false;
+    }
 
     void Update()
     {
@@ -23,53 +32,73 @@ public class Movement : MonoBehaviour
         Vector3 movement = new Vector3(LeftRightInput, 0f, UpDownInput) * moveSpeed * Time.deltaTime;
 
         rb.MovePosition(rb.position + transform.TransformDirection(movement));
-        if (EnemyFinite.playerHasFlag)
-        {
-            blueFlag.position = Vector3.MoveTowards(blueFlag.position, gameObject.transform.position + new Vector3(0, 2f, 0), 1f);
-        }
         if(EnemyFinite.roundEnded)
         {
-            gameObject.transform.position = redFlagSpawn.position;
+            playerFlagDrop = false;
+            playerHasEnemyFlag = false;
+            playerHasTheirFlag = false;
         }
-        
-        if(EnemyFinite.flagDropped)
+        if (!playerFlagDrop)
         {
-            Recapture();
+            if (playerHasEnemyFlag)
+            {
+                FlagFollow(blueFlag);
+            }
+            if (playerHasTheirFlag)
+            {
+                FlagFollow(redFlag);
+            }
         }
 
+
         
     }
 
-    private void Attack()
+    /*private void Attack()
     {
-        EnemyFinite.flagDropped = true;
-        
+        EnemyFinite.flagDrop = true;
+       
     }
-    private void Recapture()
+    */
+    private void FlagFollow(Transform flag)
     {
-        redFlag.position = redFlagSpawn.position;
+        flag.transform.position = Vector3.MoveTowards(flag.position, gameObject.transform.position, 1f) + new Vector3(0,1f,0);
     }
     private void OnTriggerEnter(Collider other)
     {
         if(other.CompareTag("BlueFlag"))
         {
+            playerFlagDrop = false;
             EnemyFinite.playerHasFlag = true;
+            playerHasEnemyFlag = true;
+            
         }
-        if(other.CompareTag("SecureBlue") && EnemyFinite.playerHasFlag)
+        if(other.CompareTag("BlueBase")&& playerHasEnemyFlag)
         {
+            playerFlagDrop = false;
+            playerHasTheirFlag = false;
+            playerHasEnemyFlag = false; 
             EnemyFinite.playerHasFlag = false;
             blueFlag.position = blueFlagSpawn.position;
-            EnemyFinite.playerScored = true;
-            EnemyFinite.roundEnded = true;
         } 
-        if(other.CompareTag("Enemy") && !EnemyFinite.playerHasFlag)
+        if(other.CompareTag("BlueBase") && playerHasTheirFlag)
         {
-            Attack();
+            playerFlagDrop = false;
+            playerHasTheirFlag = false;
+            playerHasEnemyFlag = false;
+            redFlag.position = redFlagSpawn.position;
         }
-        if(other.CompareTag("RedFlag") && EnemyFinite.flagDropped)
+        if(other.CompareTag("Enemy"))
         {
-            Recapture();
-            EnemyFinite.flagDropped = false;
+            //Attack();
+            playerFlagDrop = true;
+            playerHasTheirFlag = false;
+            playerHasEnemyFlag = false;
+        }
+        if(other.CompareTag("RedFlag"))
+        {
+            playerFlagDrop = false;
+            playerHasTheirFlag = true;
         }
     }
 }

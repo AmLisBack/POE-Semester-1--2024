@@ -11,6 +11,8 @@ TagManager:
   - SecureBlue
   - test
   - Enemy
+  - RedBase
+  - BlueBase
   layers:
   - Default
   - TransparentFX

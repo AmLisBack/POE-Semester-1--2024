@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class score : MonoBehaviour
 {
@@ -12,7 +13,9 @@ public class score : MonoBehaviour
     public GameObject[] redTally;
 
     public TextMeshProUGUI winnerText;
+    public TextMeshProUGUI roundText;
     public GameObject panel;
+    public GameObject button;
     // Start is called before the first frame update
     void Start()
     {
@@ -31,6 +34,8 @@ public class score : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        float round = redScore + blueScore + 1;
+        roundText.text = "Round " + round.ToString();
         redScore = EnemyFinite.enemyScore;
         blueScore = EnemyFinite.playerScore;
         switch (redScore)
@@ -88,4 +93,10 @@ public class score : MonoBehaviour
                 break;
         }
     }
+
+    public void Restart()
+    {
+        SceneManager.LoadScene(0);
+    }
+
 }

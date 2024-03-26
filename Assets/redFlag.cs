@@ -5,6 +5,8 @@ using UnityEngine;
 public class redFlag : MonoBehaviour
 {
     // Start is called before the first frame update
+
+    public Transform spawnLocation;
     void Start()
     {
         
@@ -18,15 +20,13 @@ public class redFlag : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("SecureRed"))
+        if(other.CompareTag("RedBase"))
         {
             EnemyFinite.roundEnded = true;
-            EnemyFinite.enemyScored = true;
+            EnemyFinite.enemyWon = true;
             
         }
-        if(other.CompareTag("Enemy"))
-        {
-            EnemyFinite.enemyHasFlag = true;
-        }
+        
+        
     }
 }

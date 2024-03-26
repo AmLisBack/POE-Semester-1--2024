@@ -5,6 +5,7 @@ using UnityEngine;
 public class blueFlag : MonoBehaviour
 {
     // Start is called before the first frame update
+    public Transform spawnLocation;
     void Start()
     {
         
@@ -17,14 +18,12 @@ public class blueFlag : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("SecureBlue"))
+        if (other.CompareTag("BlueBase"))
         {
             EnemyFinite.roundEnded = true;
-            EnemyFinite.playerScored = true;
+            EnemyFinite.playerWon = true;
         }
-        if(other.CompareTag("Enemy") && EnemyFinite.flagDropped)
-        {
-
-        }
+        
+        
     }
 }
