@@ -79,8 +79,10 @@ public class EnemyFinite : MonoBehaviour
         Debug.Log($"playerScored {playerWon} |||||| EnemyScored {enemyWon} [Current State]: {currentState}");
         if (roundEnded)
         {
+            Movement.playerHasEnemyFlag = false;
+            Movement.playerHasTheirFlag = false;
             flagReset();
-            playerHasFlag = false;
+            playerHasFlag = false; 
             enemyHasPlayersFlag = false;
             enemyHasOwnFlag = false;
             roundNumber += 1;
@@ -110,7 +112,7 @@ public class EnemyFinite : MonoBehaviour
         {
             case States.Take:
                 Take();
-                if (distanceToPlayer <= 5f && !enemyHasPlayersFlag && distanceToPlayer < distanceToBlueFlag && playerHasFlag)
+                if (distanceToPlayer <= 5f && !enemyHasPlayersFlag && distanceToPlayer < distanceToRedFlag)
                 {
                     currentState = States.Chase;
                 }

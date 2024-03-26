@@ -13,8 +13,8 @@ public class Movement : MonoBehaviour
     public Transform blueFlagSpawn;
     public Transform redFlagSpawn;
 
-    public bool playerHasEnemyFlag;
-    public bool playerHasTheirFlag;
+    public static bool playerHasEnemyFlag;
+    public static bool playerHasTheirFlag;
 
     public bool playerFlagDrop;
 

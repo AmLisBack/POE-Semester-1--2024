@@ -19,6 +19,8 @@ public class score : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        panel.SetActive(false);
+        winnerText.gameObject.SetActive(false);
         redScore = EnemyFinite.enemyScore;
         blueScore = EnemyFinite.playerScore;
         for(int i = 0; i < blueTally.Length; i++)
@@ -97,6 +99,7 @@ public class score : MonoBehaviour
     public void Restart()
     {
         SceneManager.LoadScene(0);
+        
     }
 
 }

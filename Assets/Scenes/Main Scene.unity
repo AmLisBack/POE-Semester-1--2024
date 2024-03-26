@@ -2151,8 +2151,6 @@ MonoBehaviour:
   redFlag: {fileID: 1001670098}
   blueFlagSpawn: {fileID: 401461640}
   redFlagSpawn: {fileID: 1472185878}
-  playerHasEnemyFlag: 0
-  playerHasTheirFlag: 0
   playerFlagDrop: 0
 --- !u!136 &1239161175
 CapsuleCollider:
